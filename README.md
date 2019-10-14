@@ -19,3 +19,5 @@ The corresponding audio files can be downloaded from:
 Python 3.7+
 PyTorch
 
+sudo apt install ffmpeg
+

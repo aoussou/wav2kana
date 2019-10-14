@@ -9,8 +9,6 @@ The transcripts are contained in this [CSV file](https://docs.google.com/spreads
 
 The corresponding audio files can be downloaded from:
 
-[Single words](http://www.mediafire.com/file/oyddnozmbd2/kore-sound-vocab-munged.zip
-/file)
+[Single words](http://www.mediafire.com/file/oyddnozmbd2/kore-sound-vocab-munged.zip/file)
 
-[Sentences](http://www.mediafire.com/file/1itzmjondnz/kore-sound-sentences-munged
-.zip)
+[Sentences](http://www.mediafire.com/file/1itzmjondnz/kore-sound-sentences-munged.zip/file)

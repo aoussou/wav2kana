@@ -12,3 +12,9 @@ The corresponding audio files can be downloaded from:
 [Single words](http://www.mediafire.com/file/oyddnozmbd2/kore-sound-vocab-munged.zip/file)
 
 [Sentences](http://www.mediafire.com/file/1itzmjondnz/kore-sound-sentences-munged.zip/file)
+
+# Environment:
+
+Python 3.7+
+PyTorch
+

@@ -22,29 +22,42 @@ for i,char in enumerate(hiragana_list) :
     
     dict_[char] = phonetic_list[i]
 
+dict_['ー'] = 'ー'
 katakana_list = list(katakana_str)
 for i,char in enumerate(katakana_str) :
     
     dict_[char] = phonetic_list[i]
 
-dict_['ー'] = 'ー'
+
 
 phonetic_numbering = {}
 
-for i, char in enumerate(phonetic_list) :
-    
-    phonetic_numbering[char] = i
+counter =0
+for  char in phonetic_list :
 
-dict_['ー'] = 'ー'    
+    if char not in phonetic_numbering:
+
+        phonetic_numbering[char] = counter
+        
+        counter += 1
+  
+ 
 phonetic_numbering['ー'] = len(phonetic_numbering)
 char_numbering = {}
 
-for char in dict_:
-    
+for char in dict_:    
     char_numbering[char] = phonetic_numbering[dict_[char]]
-    
 
 
-with open(root_dir + 'correspondence.json', 'w+') as f:
+with open('./correspondence.json', 'w+') as f:
     json.dump(char_numbering, f)
+f.close()
+    
+####################################################
+reverse_lookup = {}
+for char in char_numbering:      
+    reverse_lookup[char_numbering[char]] = char 
+
+with open('./lookup.json', 'w+') as f:
+    json.dump(reverse_lookup, f)
 f.close()

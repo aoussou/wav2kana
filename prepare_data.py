@@ -47,7 +47,10 @@ for i,kana in enumerate(kana_list):
         if os.stat(audio_path).st_size != 0 :
             audio = AudioSegment.from_file(audio_path, format='mp3')
             audio_npy = np.array(audio.get_array_of_samples())
-            np.save(os.path.join(word_audio_npy_dir,name),audio_npy)
+            audio_npy_scaled = audio_npy/2**15
+            
+            # If the audio file is 16-bit, the range is -2^15 2^15
+            np.save(os.path.join(word_audio_npy_dir,name),audio_npy_scaled)
 
             target = []
             for char in chars:

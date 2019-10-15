@@ -98,6 +98,10 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
+
+####################
+*.mp3
+*.wav
 /site
 
 # mypy

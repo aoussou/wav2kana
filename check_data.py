@@ -39,9 +39,3 @@ wavf.write('test.mp3',Fs,audio_npy_scaled_back)
 targets_dir = os.path.join(root_dir,'targets')
 
 target = np.load(os.path.join(targets_dir,name) + '.npy')
-str_ = ''
-
-for nbr in target :    
-    str_ += lookup_dict[str(nbr)]
-    
-print(str_)

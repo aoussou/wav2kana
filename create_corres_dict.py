@@ -55,8 +55,11 @@ f.close()
     
 ####################################################
 reverse_lookup = {}
-for char in char_numbering:      
-    reverse_lookup[char_numbering[char]] = char 
+for char in char_numbering:   
+    
+    nbr = char_numbering[char]
+    if nbr not in reverse_lookup :
+        reverse_lookup[nbr] = dict_[char] 
 
 with open('./lookup.json', 'w+') as f:
     json.dump(reverse_lookup, f)

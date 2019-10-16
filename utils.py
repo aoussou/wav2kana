@@ -11,6 +11,8 @@ from torch.utils.data import Dataset
 import random
 import numpy as np
 
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
+
 class AudioDataset(Dataset) :
     
     def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = True) :
@@ -39,12 +41,15 @@ class AudioDataset(Dataset) :
             audio_padded = np.pad(audio_npy,(0,diff_pad),'constant')
         target_npy = np.load(self.target_list[idx])
         
+        target_lengths = len(target_npy)
         target_padded = np.zeros((self.n_target_max))
         target_padded[:len(target_npy)] = target_npy    
         
+        audio_tensor = torch.unsqueeze(torch.tensor(audio_padded,device=torch.device('cuda'),dtype=torch.float),0)
+        target_tensor = torch.tensor(target_padded,device=torch.device('cuda'),dtype=torch.long)
+        target_lengths_tensor = torch.tensor(target_lengths,device=torch.device('cuda'),dtype=torch.long)
         
-        
-        return [torch.from_numpy(audio_padded), torch.from_numpy(target_padded)]
+        return [audio_tensor,target_tensor,target_lengths_tensor]
         
 
 class PostProcess() :

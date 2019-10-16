@@ -32,7 +32,7 @@ for i,char in enumerate(katakana_str) :
 
 phonetic_numbering = {}
 
-counter =0
+counter = 0
 for  char in phonetic_list :
 
     if char not in phonetic_numbering:
@@ -46,20 +46,23 @@ phonetic_numbering['ー'] = len(phonetic_numbering)
 char_numbering = {}
 
 for char in dict_:    
-    char_numbering[char] = phonetic_numbering[dict_[char]]
+    char_numbering[char] = phonetic_numbering[dict_[char]] + 1
 
 
-with open('./correspondence.json', 'w+') as f:
-    json.dump(char_numbering, f)
-f.close()
-    
-####################################################
 reverse_lookup = {}
 for char in char_numbering:   
     
     nbr = char_numbering[char]
     if nbr not in reverse_lookup :
         reverse_lookup[nbr] = dict_[char] 
+
+
+char_numbering[''] = 0
+reverse_lookup[0] = ''
+
+with open('./correspondence.json', 'w+') as f:
+    json.dump(char_numbering, f)
+f.close()
 
 with open('./lookup.json', 'w+') as f:
     json.dump(reverse_lookup, f)

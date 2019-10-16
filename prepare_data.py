@@ -35,6 +35,9 @@ create_dir(targets_dir)
 
 names_list = df['Vocab-sound-local']
 
+n_max_audio = 0
+n_max_target = 0
+
 for i,kana in enumerate(kana_list):
     
     # Some audio files are missing, skip them.
@@ -52,6 +55,9 @@ for i,kana in enumerate(kana_list):
             # If the audio file is 16-bit, the range is -2^15 2^15
             np.save(os.path.join(word_audio_npy_dir,name),audio_npy_scaled)
 
+            if len(audio_npy_scaled) > n_max_audio:
+                n_max_audio = len(audio_npy_scaled)
+
             target = []
             for char in chars:
         
@@ -64,5 +70,12 @@ for i,kana in enumerate(kana_list):
             target = np.array(target)
             np.save(os.path.join(targets_dir,name),target)
         
+            if len(target) > n_max_target:
+                n_max_target = len(target)
+                
+            
+        
             print(i,kana,target)
          
+print('The longest audio npy length is',n_max_audio)
+print('The longest audio npy length is',n_max_target)

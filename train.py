@@ -65,12 +65,12 @@ criterion = torch.nn.CTCLoss()
 
 from torch.utils.data import DataLoader
 
-batch_size_train = 32
+batch_size_train = 64
 train_loader = DataLoader(dataset_train, batch_size=batch_size_train,shuffle=True)
 val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
 
 
-n_epoch = 10
+n_epoch = 100
 
 model = Wav2Letter(n_class)
 model = model.cuda()

@@ -11,8 +11,6 @@ from torch.utils.data import Dataset
 import random
 import numpy as np
 
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
 class AudioDataset(Dataset) :
     
     def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = True) :
@@ -65,3 +63,7 @@ class PostProcess() :
             str_ += self.lookup_dict[str(nbr)]
         
         return str_
+    
+    #def output2code(self,output) :
+        
+        

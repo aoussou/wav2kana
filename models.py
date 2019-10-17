@@ -20,8 +20,10 @@ class Wav2Letter(nn.Module) :
         self.n_class = n_class
         self.n_features = n_features
         
-
-        self.no_prepocessing_model()
+        if use_batchnorm :
+            self.no_prepocessing_model_bn()
+        else :
+            self.no_prepocessing_model()            
 
     def no_prepocessing_model(self) :
         

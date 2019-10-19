@@ -8,6 +8,7 @@ Created on Thu Oct 17 13:52:40 2019
 
 import torch
 import os
+import copy
 
 
 ###############################################################################
@@ -57,39 +58,18 @@ target_list_val = np.array(target_list)[inds_val].tolist()
 n_audio_max = 80000
 n_target_max = 9
 
-dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
 dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
 n_val = len(dataset_val)
 
 lookup_dict = json.load(open('./lookup.json'))
 
-# If you look at the lookup dictionary, you will see that there are 78 characters
-# In order to use the CTC loss in PyToch, we add to add 1
-n_class = 79
-
 postprocessor = PostProcess(lookup_dict)
-
-criterion = torch.nn.CTCLoss()
-
-random_audio, random_target, _ = dataset_train[random.randint(0,len(audio_list))]
-random_target = random_target.cpu().numpy().astype('int')
-print(postprocessor.target2kana(random_target))
 
 from torch.utils.data import DataLoader
 
 batch_size_train = 64
 val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
-
-
-n_epoch = 100
-
-model = Wav2Letter(n_class)
-model = model.cuda()
-model.load_state_dict(torch.load(os.path.join('models','kore_word_state_dict.pt')))
-
-#model = torch.load(os.path.join('models','kore_word_model.pt'))
-
-#model.load_state_dict(torch.load(full_path))
+model = torch.load(os.path.join('models','kore_word_model.pt'))
 model = model.eval()
         
 for data in val_loader :
@@ -102,21 +82,9 @@ for data in val_loader :
     
     for i, vec in enumerate(outmax):
         
+        print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
         
-        print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec))
-        
-        #STOP
-#        outmax = torch.argmax(vec,dim=2)
-#        
-#        STOP
-#        print(vec.shape)
-#        
-#        o = vec
-#        print(vec)
-#        
-#        STOP
-#
-#    STOP        
+
 
 
 

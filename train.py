@@ -74,6 +74,7 @@ n_epoch = 100
 
 model = Wav2Letter(n_class)
 model = model.cuda()
+model.train()
 
 optimizer = torch.optim.Adam(model.parameters())
 
@@ -82,6 +83,7 @@ total_val_loss_old = 1e16
 for e in range(n_epoch) :
     
     total_training_loss = 0   
+    model.train()
     for data in train_loader :
         
         optimizer.zero_grad()   
@@ -103,7 +105,8 @@ for e in range(n_epoch) :
         loss.backward()
         optimizer.step()
 
-    total_val_loss = 0        
+    total_val_loss = 0  
+    model.eval()      
     for data in val_loader :
         
         audio = data[0]

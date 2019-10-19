@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 import random
 import numpy as np
+import copy
 
 class AudioDataset(Dataset) :
     
@@ -56,14 +57,25 @@ class PostProcess() :
         
         self.lookup_dict = lookup_dict
         
-    def target2kana(self,target) :
+    def target2kana(self,target,refine=False) :
         
         str_ = ''
         for nbr in target :   
             str_ += self.lookup_dict[str(nbr)]
+            
+        if refine:            
+            str_ = self.refine(str_)
         
         return str_
     
-    #def output2code(self,output) :
+    def refine(self,raw_word) :
         
-        
+        current_char = None
+        str_ = ''
+        for char in raw_word :
+            
+            if char != current_char :
+                str_+= char
+                current_char = copy.copy(char)
+    
+        return str_

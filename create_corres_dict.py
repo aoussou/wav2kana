@@ -17,16 +17,16 @@ phonetic_kana_str = 'ァアィイゥウェエォオカガキギクグケゲコ�
 
 hiragana_list = list(hiragana_str)
 phonetic_list = list(phonetic_kana_str)
-dict_ = {}
+hira2kata = {}
 for i,char in enumerate(hiragana_list) :
     
-    dict_[char] = phonetic_list[i]
+    hira2kata[char] = phonetic_list[i]
 
-dict_['ー'] = 'ー'
+hira2kata['ー'] = 'ー'
 katakana_list = list(katakana_str)
 for i,char in enumerate(katakana_str) :
     
-    dict_[char] = phonetic_list[i]
+    hira2kata[char] = phonetic_list[i]
 
 
 
@@ -45,8 +45,8 @@ for  char in phonetic_list :
 phonetic_numbering['ー'] = len(phonetic_numbering)
 char_numbering = {}
 
-for char in dict_:    
-    char_numbering[char] = phonetic_numbering[dict_[char]] + 1
+for char in hira2kata:    
+    char_numbering[char] = phonetic_numbering[hira2kata[char]] + 1
 
 
 reverse_lookup = {}
@@ -54,11 +54,15 @@ for char in char_numbering:
     
     nbr = char_numbering[char]
     if nbr not in reverse_lookup :
-        reverse_lookup[nbr] = dict_[char] 
+        reverse_lookup[nbr] = hira2kata[char] 
 
 
 char_numbering[''] = 0
 reverse_lookup[0] = ''
+
+with open('./hira2kata.json', 'w+') as f:
+    json.dump(hira2kata, f)
+f.close()
 
 with open('./correspondence.json', 'w+') as f:
     json.dump(char_numbering, f)

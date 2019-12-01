@@ -157,7 +157,7 @@ if __name__ == '__main__':
     sets = []
     
     if not os.path.isdir(path_set1) :
-        print('Invalid path.')
+        print('set1 path invalid.')
         sys.exit()
         
     print('Set1',os.path.basename(path_set1),'training data ratio:',args.train_ratio1)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     if path_set2 is not None :
         
         if not os.path.isdir(path_set2) :
-            print('Invalid path.')
+            print('set2 path invalid.')
             sys.exit()
             
         print('Set2',os.path.basename(path_set2),'training data ratio:',args.train_ratio2)
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     if path_set3 is not None :
         
         if not os.path.isdir(path_set3) :
-            print('Invalid path.')
+            print('set3 path invalid.')
             sys.exit()     
         
         print('Set3',os.path.basename(path_set3),'training data ratio:',args.train_ratio3)        

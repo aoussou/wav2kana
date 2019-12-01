@@ -25,7 +25,7 @@ sudo apt install ffmpeg
 
 # Prepare the data
 
-`python prepare_data.py -d [DATA_DIR] -r kore_sentences_katakana.csv -a kore-sound-vocab-munged`
+`python prepare_data.py -d [DATA_DIR] -r kore_words_katakana.csv -a kore-sound-vocab-munged`
 
 `python prepare_data.py -d [DATA_DIR] -r kore_sentences_katakana.csv -a kore-sound-sentences-munged`
 

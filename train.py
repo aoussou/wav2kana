@@ -15,11 +15,12 @@ from models import Wav2Letter
 import torch
 from glob import glob
 import argparse
+import sys
 
 lookup_dict = json.load(open('./lookup.json'))
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-def create_dataset_loaders(sets,batch_size_train = 64) :
+def create_dataset_loaders(sets,n_audio_max,n_target_max,batch_size_train = 64) :
 
     audio_list_train = []
     audio_list_val = []
@@ -38,25 +39,23 @@ def create_dataset_loaders(sets,batch_size_train = 64) :
         target_list = sorted(glob(glob_pattern), key=os.path.getctime)
         
         n_dataset = len(audio_list)
-    
         n_train = int(set_['train_ratio']*n_dataset)
+        
         inds = np.arange(n_dataset)
         np.random.shuffle(inds)
         inds_train = inds[:n_train]
         inds_val = inds[n_train:]
         
-        audio_list_train.append(np.array(audio_list)[inds_train].tolist())
-        audio_list_val.append(np.array(audio_list)[inds_val].tolist())
+        audio_list_train += np.array(audio_list)[inds_train].tolist()
+        audio_list_val += np.array(audio_list)[inds_val].tolist()
         
-        target_list_train.append(np.array(target_list)[inds_train].tolist())
-        target_list_val.append(np.array(target_list)[inds_val].tolist())
+        target_list_train += np.array(target_list)[inds_train].tolist()
+        target_list_val += np.array(target_list)[inds_val].tolist()
     
-    n_audio_max = 80000
-    n_target_max = 9
     
     dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
     dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
-        
+    
     train_loader = DataLoader(dataset_train, batch_size=batch_size_train,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
     
@@ -68,9 +67,8 @@ def create_dataset_loaders(sets,batch_size_train = 64) :
 
 def train(model,optimizer,criterion,train_loader,val_loader,n_epoch) :
     
-    n_train = len(train_loader)
-    n_val = len(val_loader)
-
+    n_train = len(train_loader.dataset)
+    n_val = len(val_loader.dataset)
 
     total_val_loss_old = 1e16
 
@@ -131,38 +129,59 @@ if __name__ == '__main__':
     
     parser.add_argument('-s1', '--dataset1', 
                         default = None, type = str)  
-    parser.add_argument('-p1', '--train_ratio1', 
+    parser.add_argument('-r1', '--train_ratio1', 
                         default = .8, type = float)  
     
     parser.add_argument('-s2', '--dataset2', 
                         default = None, type = str) 
-    parser.add_argument('-p2', '--train_ratio2', 
+    parser.add_argument('-r2', '--train_ratio2', 
                         default = .8, type = float)  
     
     parser.add_argument('-s3', '--dataset3', 
                         default = None, type = str)  
-    parser.add_argument('-p3', '--train_ratio3', 
+    parser.add_argument('-r3', '--train_ratio3', 
                         default = .8, type = float)  
+    
+    parser.add_argument('-a', '--longest_audio_npy', 
+                        default = 80000, type = int)  
+    parser.add_argument('-t', '--longest_target', 
+                        default = 9, type = int)      
     
     args = parser.parse_args()        
     path_set1 = args.dataset1
     path_set2 = args.dataset2
     path_set3 = args.dataset3    
+    n_audio_max = args.longest_audio_npy
+    n_target_max = args.longest_target
     
     sets = []
     
-    print('Set1',os.path.basename(path_set1))
+    if not os.path.isdir(path_set1) :
+        print('Invalid path.')
+        sys.exit()
+        
+    print('Set1',os.path.basename(path_set1),'training data ratio:',args.train_ratio1)
     set1 = {'path' : path_set1, 'train_ratio' :  args.train_ratio1}
     
     sets.append(set1)
     
     if path_set2 is not None :
-        print('Set2',os.path.basename(path_set2))
+        
+        if not os.path.isdir(path_set2) :
+            print('Invalid path.')
+            sys.exit()
+            
+        print('Set2',os.path.basename(path_set2),'training data ratio:',args.train_ratio2)
         set2 = {'path' : path_set2, 'train_ratio' :  args.train_ratio2}
         sets.append(set2)
         
     if path_set3 is not None :
-        print('Set3',os.path.basename(path_set3))        
+        
+        if not os.path.isdir(path_set3) :
+            print('Invalid path.')
+            sys.exit()     
+        
+        print('Set3',os.path.basename(path_set3),'training data ratio:',args.train_ratio3)        
         set3 = {'path' : path_set3, 'train_ratio' :  args.train_ratio3}    
         sets.append(set3)
         
@@ -181,5 +200,5 @@ if __name__ == '__main__':
     
     criterion = torch.nn.CTCLoss()
     
-    train_loader,val_loader = create_dataset_loaders(sets,batch_size_train = 64)
+    train_loader,val_loader = create_dataset_loaders(sets,n_audio_max,n_target_max,batch_size_train = 8)
     train(model,optimizer,criterion,train_loader,val_loader,n_epoch)

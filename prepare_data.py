@@ -79,18 +79,19 @@ if __name__ == '__main__':
 
     csv_file_name = args.ref_file
     dataset_name = os.path.splitext(csv_file_name)[0]
+    
     audio_file_folder_name =  args.audio_folder   
     
     csv_file_path = os.path.join(data_dir,csv_file_name)
     df = pd.read_csv(csv_file_path)
     kana_list = df['katakana']
     
-    
     audio_dir = os.path.join(data_dir,audio_file_folder_name)
-    audio_npy_dir = os.path.join(data_dir,dataset_name + '_word_audio_npy') 
+    
+    audio_npy_dir = os.path.join(data_dir,dataset_name,'word_audio_npy') 
     create_dir(audio_npy_dir)
     
-    targets_dir = os.path.join(data_dir,dataset_name + '_targets')
+    targets_dir = os.path.join(data_dir,dataset_name,'targets')
     create_dir(targets_dir)
     
     names_list = df['audio_file_name']    

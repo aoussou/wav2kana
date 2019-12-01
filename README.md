@@ -25,11 +25,11 @@ sudo apt install ffmpeg
 
 # Prepare the data
 
-`python prepare_data.py -d [DATA_DIR] -r kore_words_katakana.csv -a kore-sound-vocab-munged`
+`python prepare_data.py -d [DATA_DIR] -r kore_words.csv -a kore-sound-vocab-munged`
 
-`python prepare_data.py -d [DATA_DIR] -r kore_sentences_katakana.csv -a kore-sound-sentences-munged`
+`python prepare_data.py -d [DATA_DIR] -r kore_sentences.csv -a kore-sound-sentences-munged`
 
-`python prepare_data.py -d [DATA_DIR] -r tatoeba_katakana.csv -a tatoeba_audio`
+`python prepare_data.py -d [DATA_DIR] -r tatoeba.csv -a tatoeba_audio`
 
 
 

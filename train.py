@@ -1,4 +1,4 @@
-f#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 16 14:54:29 2019
@@ -7,128 +7,179 @@ Created on Wed Oct 16 14:54:29 2019
 """
 import os
 from utils import AudioDataset, PostProcess
+from torch.utils.data import DataLoader
 import json
 import random
 import numpy as np
 from models import Wav2Letter
 import torch
-
-torch.set_default_tensor_type('torch.cuda.FloatTensor')
-
-audio_dir = '/home/john/hdd/data/audio/kore/word_audio_npy/'
-target_dir = '/home/john/hdd/data/audio/kore/targets/'
-
 from glob import glob
-audio_dir = '/home/john/hdd/data/audio/kore/word_audio_npy/'
-glob_pattern = os.path.join(audio_dir, '*')
-audio_list = sorted(glob(glob_pattern), key=os.path.getctime)
-
-target_dir = '/home/john/hdd/data/audio/kore/targets/'
-glob_pattern = os.path.join(target_dir, '*')
-target_list = sorted(glob(glob_pattern), key=os.path.getctime)
-
-n_dataset = len(audio_list)
-train_proportion = .9
-n_train = int(.9*n_dataset)
-inds = np.arange(n_dataset)
-np.random.shuffle(inds)
-inds_train = inds[:n_train]
-inds_val = inds[n_train:]
-
-audio_list_train = np.array(audio_list)[inds_train].tolist()
-audio_list_val = np.array(audio_list)[inds_val].tolist()
-
-target_list_train = np.array(target_list)[inds_train].tolist()
-target_list_val = np.array(target_list)[inds_val].tolist()
-
-n_audio_max = 80000
-n_target_max = 9
-
-dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
-dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
-n_val = len(dataset_val)
+import argparse
 
 lookup_dict = json.load(open('./lookup.json'))
+torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-# If you look at the lookup dictionary, you will see that there are 78 characters
-# In order to use the CTC loss in PyToch, we add to add 1
-n_class = 79
+def create_dataset_loaders(sets,batch_size_train = 64) :
 
-postprocessor = PostProcess(lookup_dict)
+    audio_list_train = []
+    audio_list_val = []
 
-criterion = torch.nn.CTCLoss()
+    target_list_train = []
+    target_list_val = []
+    
+    for set_ in sets :
+    
+        audio_dir = os.path.join(set_['path'],'word_audio_npy')
+        glob_pattern = os.path.join(audio_dir, '*')
+        audio_list = sorted(glob(glob_pattern), key=os.path.getctime)
+        
+        target_dir = os.path.join(set_['path'],'targets')
+        glob_pattern = os.path.join(target_dir, '*')
+        target_list = sorted(glob(glob_pattern), key=os.path.getctime)
+        
+        n_dataset = len(audio_list)
+    
+        n_train = int(set_['train_ratio']*n_dataset)
+        inds = np.arange(n_dataset)
+        np.random.shuffle(inds)
+        inds_train = inds[:n_train]
+        inds_val = inds[n_train:]
+        
+        audio_list_train.append(np.array(audio_list)[inds_train].tolist())
+        audio_list_val.append(np.array(audio_list)[inds_val].tolist())
+        
+        target_list_train.append(np.array(target_list)[inds_train].tolist())
+        target_list_val.append(np.array(target_list)[inds_val].tolist())
+    
+    n_audio_max = 80000
+    n_target_max = 9
+    
+    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
+        
+    train_loader = DataLoader(dataset_train, batch_size=batch_size_train,shuffle=True)
+    val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
+    
+    return train_loader, val_loader
 
 #random_audio, random_target, _ = dataset_train[random.randint(0,len(audio_list))]
 #random_target = random_target.cpu().numpy().astype('int')
 #print(postprocessor.target2kana(random_target))
 
-
-from torch.utils.data import DataLoader
-
-batch_size_train = 64
-train_loader = DataLoader(dataset_train, batch_size=batch_size_train,shuffle=True)
-val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
-
-
-n_epoch = 100
-
-model = Wav2Letter(n_class)
-model = model.cuda()
-model.train()
-
-optimizer = torch.optim.Adam(model.parameters())
-
-total_val_loss_old = 1e16
-
-for e in range(n_epoch) :
+def train(model,optimizer,criterion,train_loader,val_loader,n_epoch) :
     
-    total_training_loss = 0   
-    model.train()
-    for data in train_loader :
+    n_train = len(train_loader)
+    n_val = len(val_loader)
+
+
+    total_val_loss_old = 1e16
+
+    for e in range(n_epoch) :
         
-        optimizer.zero_grad()   
-        
-        audio = data[0]
-        targets = data[1]
-        target_lengths = data[2]        
-        current_batch_size = audio.size()[0]
-        output = model(audio)
-        
-        # this basically a tensor vector of the length the size of the current
-        # batch size, each entry being the length of the predictions (determined in the model)
-        input_lengths = torch.full(size=(audio.size()[0],), fill_value=output.size()[-1], dtype=torch.long)
-        
-        # loss = ctc_loss(input, target, input_lengths, target_lengths)
-        loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)        
-        total_training_loss += float(loss.cpu())
+        total_training_loss = 0   
+        model.train()
+        for data in train_loader :
+            
+            optimizer.zero_grad()   
+            
+            audio = data[0]
+            targets = data[1]
+            target_lengths = data[2]        
+            current_batch_size = audio.size()[0]
+            output = model(audio)
+            
+            # this basically a tensor vector of the length the size of the current
+            # batch size, each entry being the length of the predictions (determined in the model)
+            input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
+            
+            # loss = ctc_loss(input, target, input_lengths, target_lengths)
+            loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)        
+            total_training_loss += float(loss.cpu())
+                    
+            loss.backward()
+            optimizer.step()
+    
+        total_val_loss = 0  
+        model.eval()      
+        for data in val_loader :
+            
+            audio = data[0]
+            targets = data[1]
+            target_lengths = data[2]        
+            current_batch_size = audio.size()[0]
+            output = model(audio)        
+    
+            input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
+            loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)
+    
+            total_val_loss += float(loss.cpu())
+            
+            if total_val_loss < total_val_loss_old :
                 
-        loss.backward()
-        optimizer.step()
+                total_val_loss_old = total_val_loss
+                
+                torch.save(model.state_dict(), os.path.join('models','kore_word_state_dict.pt') )       
+                torch.save(model, os.path.join('models','kore_word_model.pt'))
+           
+    
+        print(e,total_training_loss/n_train,total_val_loss/n_val)
 
-    total_val_loss = 0  
-    model.eval()      
-    for data in val_loader :
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('-s1', '--dataset1', 
+                        default = None, type = str)  
+    parser.add_argument('-p1', '--train_ratio1', 
+                        default = .8, type = float)  
+    
+    parser.add_argument('-s2', '--dataset2', 
+                        default = None, type = str) 
+    parser.add_argument('-p2', '--train_ratio2', 
+                        default = .8, type = float)  
+    
+    parser.add_argument('-s3', '--dataset3', 
+                        default = None, type = str)  
+    parser.add_argument('-p3', '--train_ratio3', 
+                        default = .8, type = float)  
+    
+    args = parser.parse_args()        
+    path_set1 = args.dataset1
+    path_set2 = args.dataset2
+    path_set3 = args.dataset3    
+    
+    sets = []
+    
+    print('Set1',os.path.basename(path_set1))
+    set1 = {'path' : path_set1, 'train_ratio' :  args.train_ratio1}
+    
+    sets.append(set1)
+    
+    if path_set2 is not None :
+        print('Set2',os.path.basename(path_set2))
+        set2 = {'path' : path_set2, 'train_ratio' :  args.train_ratio2}
+        sets.append(set2)
         
-        audio = data[0]
-        targets = data[1]
-        target_lengths = data[2]        
-        current_batch_size = audio.size()[0]
-        output = model(audio)        
-
-        input_lengths = torch.full(size=(audio.size()[0],), fill_value=output.size()[-1], dtype=torch.long)
-        loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)
-
-        total_val_loss += float(loss.cpu())
+    if path_set3 is not None :
+        print('Set3',os.path.basename(path_set3))        
+        set3 = {'path' : path_set3, 'train_ratio' :  args.train_ratio3}    
+        sets.append(set3)
         
-        if total_val_loss < total_val_loss_old :
-            
-            total_val_loss_old = total_val_loss
-            
-            torch.save(model.state_dict(), os.path.join('models','kore_word_state_dict.pt') )       
-            torch.save(model, os.path.join('models','kore_word_model.pt'))
-       
+    # If you look at the lookup dictionary, you will see that there are 78 characters
+    # In order to use the CTC loss in PyToch, we need to add 1
+    n_class = 79
+    n_epoch = 100
 
-    print(e,total_training_loss/n_train,total_val_loss/n_val)
+    model = Wav2Letter(n_class)
+    model = model.cuda()
+    model.train()
 
- 
-
+    optimizer = torch.optim.Adam(model.parameters())
+    
+    #postprocessor = PostProcess(lookup_dict)
+    
+    criterion = torch.nn.CTCLoss()
+    
+    train_loader,val_loader = create_dataset_loaders(sets,batch_size_train = 64)
+    train(model,optimizer,criterion,train_loader,val_loader,n_epoch)

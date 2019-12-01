@@ -21,3 +21,8 @@ PyTorch
 
 sudo apt install ffmpeg
 
+# Prepare the data
+
+`python prepare_data.py -d ../../data/audio/tatoeba -r tatoeba_katakana.csv -a tatoeba_audio`
+
+`python prepare_data.py -d ../../data/audio/kore_sentences -r kore_sentences_katakana.csv -a kore-sound-sentences-munged`

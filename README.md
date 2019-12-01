@@ -31,6 +31,19 @@ sudo apt install ffmpeg
 
 `python prepare_data.py -d [DATA_DIR] -r tatoeba.csv -a tatoeba_audio`
 
+# Run the training
+
+## Examples
+
+`python train.py -s1 [DATA_DIR1] -r1 .7`
+
+`python train.py -s1 [DATA_DIR1] -r1 1.0 -s2 [DATA_DIR2] -r2 .7 -a 280000 -t 39`
+
+`python train.py -s1 [DATA_DIR1] -r1 1.0 -s2 [DATA_DIR2] -r2 .7 -a 120000 -t 23`
+
+`python train.py -s1 [DATA_DIR1] -r1 1.0 -s2 [DATA_DIR2] -r2 .9 -s3 [DATA_DIR3] -r3 .3 -a 280000 -t 39`
+
+
 
 
 

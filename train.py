@@ -15,6 +15,13 @@ import torch
 from glob import glob
 import argparse
 import sys
+import time
+
+###############################################################################
+def create_dir(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+###############################################################################  
 
 lookup_dict = json.load(open('./lookup.json'))
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
@@ -58,7 +65,7 @@ def train_val_split(sets,n_audio_max,n_target_max) :
 #random_target = random_target.cpu().numpy().astype('int')
 #print(postprocessor.target2kana(random_target))
 
-def train(model,optimizer,criterion,train_loader,val_loader,n_epoch) :
+def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
     
     n_train = len(train_loader.dataset)
     n_val = len(val_loader.dataset)
@@ -105,12 +112,12 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch) :
     
             total_val_loss += float(loss.cpu())
             
-            if total_val_loss < total_val_loss_old :
+            if total_val_loss < total_val_loss_old and save_dir is not None:
                 
                 total_val_loss_old = total_val_loss
                 
-                torch.save(model.state_dict(), os.path.join('models','kore_word_state_dict.pt') )       
-                torch.save(model, os.path.join('models','kore_word_model.pt'))
+                torch.save(model.state_dict(), os.path.join(save_dir,'state_dict.pt') )       
+                torch.save(model, os.path.join(save_dir,'model.pt'))
            
     
         print(e,total_training_loss/n_train,total_val_loss/n_val)
@@ -140,6 +147,9 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--longest_target', 
                         default = 9, type = int)      
     
+    parser.add_argument('-d', '--save_dir', 
+                        default = 'auto', type = str)      
+
     
     args = parser.parse_args()        
     path_set1 = args.dataset1
@@ -183,6 +193,15 @@ if __name__ == '__main__':
         set3 = {'path' : path_set3, 'train_ratio' :  args.train_ratio3}    
         sets.append(set3)
         
+    save_dir = args.save_dir
+    if save_dir == '0':
+        save_path = None
+    if save_dir == 'auto' :
+        launch_time = time.strftime("%Y-%m-%d_%H%M")
+        save_path = os.path.join('models',launch_time) 
+    else :
+        save_path = os.path.join('models',save_dir)     
+        
     # If you look at the lookup dictionary, you will see that there are 78 characters
     # In order to use the CTC loss in PyToch, we need to add 1
     n_class = 79
@@ -211,7 +230,9 @@ if __name__ == '__main__':
     info_dict['target_list_train'] = target_list_train
     info_dict['audio_list_val'] = audio_list_val
     info_dict['target_list_val'] = target_list_val    
+    info_dict['sets'] = sets
     
-    json.dump( info_dict, open('./models/info_dict.json','w+'))    
+    create_dir(save_path)
+    json.dump( info_dict, open(os.path.join(save_path,'info_dict.json'),'w+'))    
     
-    train(model,optimizer,criterion,train_loader,val_loader,n_epoch)
+    train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path)

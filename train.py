@@ -9,7 +9,6 @@ import os
 from utils import AudioDataset, PostProcess
 from torch.utils.data import DataLoader
 import json
-import random
 import numpy as np
 from models import Wav2Letter
 import torch
@@ -20,7 +19,7 @@ import sys
 lookup_dict = json.load(open('./lookup.json'))
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
 
-def create_dataset_loaders(sets,n_audio_max,n_target_max,batch_size_train = 64) :
+def train_val_split(sets,n_audio_max,n_target_max) :
 
     audio_list_train = []
     audio_list_val = []
@@ -53,13 +52,7 @@ def create_dataset_loaders(sets,n_audio_max,n_target_max,batch_size_train = 64) 
         target_list_val += np.array(target_list)[inds_val].tolist()
     
     
-    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
-    
-    train_loader = DataLoader(dataset_train, batch_size=batch_size_train,shuffle=True)
-    val_loader = DataLoader(dataset_val, batch_size=batch_size_train,shuffle=False)
-    
-    return train_loader, val_loader
+    return audio_list_train, target_list_train, audio_list_val, target_list_val
 
 #random_audio, random_target, _ = dataset_train[random.randint(0,len(audio_list))]
 #random_target = random_target.cpu().numpy().astype('int')
@@ -147,12 +140,17 @@ if __name__ == '__main__':
     parser.add_argument('-t', '--longest_target', 
                         default = 9, type = int)      
     
+    
     args = parser.parse_args()        
     path_set1 = args.dataset1
     path_set2 = args.dataset2
     path_set3 = args.dataset3    
     n_audio_max = args.longest_audio_npy
     n_target_max = args.longest_target
+    
+    info_dict = {}
+    info_dict['n_audio_max'] = n_audio_max
+    info_dict['n_target_max'] = n_target_max
     
     sets = []
     
@@ -199,6 +197,21 @@ if __name__ == '__main__':
     #postprocessor = PostProcess(lookup_dict)
     
     criterion = torch.nn.CTCLoss()
+
+    audio_list_train, target_list_train, audio_list_val, target_list_val = \
+        train_val_split(sets,n_audio_max,n_target_max)
+
+    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     
-    train_loader,val_loader = create_dataset_loaders(sets,n_audio_max,n_target_max,batch_size_train = 8)
+    train_loader = DataLoader(dataset_train, batch_size=8,shuffle=True)
+    val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
+    
+    info_dict['audio_list_train'] = audio_list_train
+    info_dict['target_list_train'] = target_list_train
+    info_dict['audio_list_val'] = audio_list_val
+    info_dict['target_list_val'] = target_list_val    
+    
+    json.dump( info_dict, open('./models/info_dict.json','w+'))    
+    
     train(model,optimizer,criterion,train_loader,val_loader,n_epoch)

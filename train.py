@@ -16,6 +16,7 @@ from glob import glob
 import argparse
 import sys
 import time
+import torch.nn as nn
 
 ###############################################################################
 def create_dir(path):
@@ -112,12 +113,12 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
     
             total_val_loss += float(loss.cpu())
             
-            if total_val_loss < total_val_loss_old and save_dir is not None:
+            if total_val_loss < total_val_loss_old and save_path is not None:
                 
                 total_val_loss_old = total_val_loss
                 
-                torch.save(model.state_dict(), os.path.join(save_dir,'state_dict.pt') )       
-                torch.save(model, os.path.join(save_dir,'model.pt'))
+                torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
+                torch.save(model, os.path.join(save_path,'model.pt'))
            
     
         print(e,total_training_loss/n_train,total_val_loss/n_val)
@@ -150,6 +151,11 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--save_dir', 
                         default = 'auto', type = str)      
 
+    parser.add_argument('-g', '--multi_gpu', 
+                        default = False, type = bool)    
+
+    parser.add_argument('-b', '--batch_size', 
+                        default = 64, type = int)    
     
     args = parser.parse_args()        
     path_set1 = args.dataset1
@@ -157,6 +163,8 @@ if __name__ == '__main__':
     path_set3 = args.dataset3    
     n_audio_max = args.longest_audio_npy
     n_target_max = args.longest_target
+    multi_gpu = args.multi_gpu
+    batch_size = args.batch_size
     
     info_dict = {}
     info_dict['n_audio_max'] = n_audio_max
@@ -196,11 +204,14 @@ if __name__ == '__main__':
     save_dir = args.save_dir
     if save_dir == '0':
         save_path = None
-    if save_dir == 'auto' :
+        print('ATTENTION: model will not be saved!!!')
+    elif save_dir == 'auto' :
         launch_time = time.strftime("%Y-%m-%d_%H%M")
         save_path = os.path.join('models',launch_time) 
+        print('Model will be saved in',save_path)
     else :
-        save_path = os.path.join('models',save_dir)     
+        save_path = save_dir
+        print('Model will be saved in',save_path)
         
     # If you look at the lookup dictionary, you will see that there are 78 characters
     # In order to use the CTC loss in PyToch, we need to add 1
@@ -209,6 +220,8 @@ if __name__ == '__main__':
 
     model = Wav2Letter(n_class)
     model = model.cuda()
+    if multi_gpu:
+        model = nn.DataParallel(model)
     model.train()
 
     optimizer = torch.optim.Adam(model.parameters())
@@ -223,8 +236,8 @@ if __name__ == '__main__':
     dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
     dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     
-    train_loader = DataLoader(dataset_train, batch_size=8,shuffle=True)
-    val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
+    train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
+    val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)
     
     info_dict['audio_list_train'] = audio_list_train
     info_dict['target_list_train'] = target_list_train

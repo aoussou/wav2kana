@@ -8,19 +8,7 @@ Created on Thu Oct 17 13:52:40 2019
 
 import torch
 import os
-import copy
 import argparse
-import sys
-
-###############################################################################
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 16 14:54:29 2019
-
-@author: john
-"""
-import os
 from utils import AudioDataset, PostProcess
 import json
 
@@ -44,16 +32,15 @@ def infer(model,val_loader) :
         audio = data[0]
         targets = data[1].cpu().numpy().astype('int')     
         output = model(audio)
+        print(output)
         outmax = torch.argmax(output,dim=1).cpu().numpy()
         
         
         for i, vec in enumerate(outmax):
             
-            print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
-            
+            #print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
 
-
-
+            print(postprocessor.target2kana(vec,refine = False))            
 
 if __name__ == '__main__':
 
@@ -77,7 +64,7 @@ if __name__ == '__main__':
     dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
 
-    model = torch.load(os.path.join('models','kore_word_model.pt'))
+    model = torch.load(os.path.join(model_path,'model.pt'))
     model = model.eval()
     
     infer(model,val_loader)

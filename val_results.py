@@ -32,7 +32,6 @@ def infer(model,val_loader) :
         audio = data[0]
         targets = data[1].cpu().numpy().astype('int')     
         output = model(audio)
-        print(output)
         outmax = torch.argmax(output,dim=1).cpu().numpy()
         
         

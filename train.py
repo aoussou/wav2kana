@@ -18,6 +18,7 @@ import sys
 import time
 import torch.nn as nn
 
+np.random.seed(19)
 ###############################################################################
 def create_dir(path):
     if not os.path.isdir(path):
@@ -26,6 +27,7 @@ def create_dir(path):
 
 lookup_dict = json.load(open('./lookup.json'))
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
+torch.cuda.set_device(0)
 
 def train_val_split(sets,n_audio_max,n_target_max) :
 
@@ -113,14 +115,29 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
     
             total_val_loss += float(loss.cpu())
             
-            if total_val_loss < total_val_loss_old and save_path is not None:
-                
-                total_val_loss_old = total_val_loss
-                
-                torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
-                torch.save(model, os.path.join(save_path,'model.pt'))
+        if total_val_loss < total_val_loss_old and save_path is not None:
+            
+            total_val_loss_old = total_val_loss
+            
+            torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
+            torch.save(model, os.path.join(save_path,'model.pt'))
            
-    
+            for data in val_loader :
+                
+                audio = data[0]
+                targets = data[1]
+                target_lengths = data[2]        
+                current_batch_size = audio.size()[0]
+                output = model(audio)        
+        
+                input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
+                loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)         
+            
+                targets = data[1].cpu().numpy().astype('int')    
+                outmax = torch.argmax(output,dim=1).cpu().numpy()
+                for i, vec in enumerate(outmax):            
+                    print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
+                    #print(postprocessor.target2kana(vec,refine = True))                
         print(e,total_training_loss/n_train,total_val_loss/n_val)
 
 
@@ -151,8 +168,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--save_dir', 
                         default = 'auto', type = str)      
 
-    parser.add_argument('-g', '--multi_gpu', 
-                        default = False, type = bool)    
+    parser.add_argument('-g', '--multi_gpu', action='store_true', 
+                        default = False)    
 
     parser.add_argument('-b', '--batch_size', 
                         default = 64, type = int)    
@@ -226,7 +243,7 @@ if __name__ == '__main__':
 
     optimizer = torch.optim.Adam(model.parameters())
     
-    #postprocessor = PostProcess(lookup_dict)
+    postprocessor = PostProcess(lookup_dict)
     
     criterion = torch.nn.CTCLoss()
 

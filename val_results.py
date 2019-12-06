@@ -37,9 +37,9 @@ def infer(model,val_loader) :
         
         for i, vec in enumerate(outmax):
             
-            #print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
+            print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
 
-            print(postprocessor.target2kana(vec,refine = False))            
+            #print(postprocessor.target2kana(vec,refine = False))            
 
 if __name__ == '__main__':
 
@@ -60,7 +60,10 @@ if __name__ == '__main__':
     n_audio_max = info_dict['n_audio_max']     
     n_target_max = info_dict['n_target_max']  
 
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
+#    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
+#    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed=False)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = True,change_speed=False)
+    
     val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
 
     model = torch.load(os.path.join(model_path,'model.pt'))

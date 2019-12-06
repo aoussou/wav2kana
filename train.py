@@ -122,22 +122,23 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
             torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
             torch.save(model, os.path.join(save_path,'model.pt'))
            
-            for data in val_loader :
-                
-                audio = data[0]
-                targets = data[1]
-                target_lengths = data[2]        
-                current_batch_size = audio.size()[0]
-                output = model(audio)        
-        
-                input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
-                loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)         
-            
-                targets = data[1].cpu().numpy().astype('int')    
-                outmax = torch.argmax(output,dim=1).cpu().numpy()
-                for i, vec in enumerate(outmax):            
-                    print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
-                    #print(postprocessor.target2kana(vec,refine = True))                
+#            for data in val_loader :
+#                
+#                audio = data[0]
+#                targets = data[1]
+#                target_lengths = data[2]        
+#                current_batch_size = audio.size()[0]
+#                output = model(audio)        
+#        
+#                input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
+#                loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)         
+#            
+#                targets = data[1].cpu().numpy().astype('int')    
+#                outmax = torch.argmax(output,dim=1).cpu().numpy()
+#                for i, vec in enumerate(outmax):            
+#                    print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
+#                    #print(postprocessor.target2kana(vec,refine = True))                
+                    
         print(e,total_training_loss/n_train,total_val_loss/n_val)
 
 
@@ -173,6 +174,9 @@ if __name__ == '__main__':
 
     parser.add_argument('-b', '--batch_size', 
                         default = 64, type = int)    
+
+    parser.add_argument('-lr', '--learning_rate', 
+                        default = 1e-4, type = float)   
     
     args = parser.parse_args()        
     path_set1 = args.dataset1
@@ -182,10 +186,14 @@ if __name__ == '__main__':
     n_target_max = args.longest_target
     multi_gpu = args.multi_gpu
     batch_size = args.batch_size
+    lr = args.learning_rate
+
     
     info_dict = {}
     info_dict['n_audio_max'] = n_audio_max
     info_dict['n_target_max'] = n_target_max
+    
+    
     
     sets = []
     
@@ -233,7 +241,7 @@ if __name__ == '__main__':
     # If you look at the lookup dictionary, you will see that there are 78 characters
     # In order to use the CTC loss in PyToch, we need to add 1
     n_class = 79
-    n_epoch = 100
+    n_epoch = 200
 
     model = Wav2Letter(n_class)
     model = model.cuda()
@@ -241,7 +249,7 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters())
+    optimizer = torch.optim.Adam(model.parameters(),lr=lr)
     
     postprocessor = PostProcess(lookup_dict)
     
@@ -251,7 +259,7 @@ if __name__ == '__main__':
         train_val_split(sets,n_audio_max,n_target_max)
 
     dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed = False)
     
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)

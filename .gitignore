@@ -98,6 +98,10 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
 
 ####################
 *.mp3
@@ -107,7 +111,4 @@ venv.bak/
 *~lock.*
 archive
 
-/site
 
-# mypy
-.mypy_cache/

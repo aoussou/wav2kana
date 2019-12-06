@@ -73,7 +73,7 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
     n_train = len(train_loader.dataset)
     n_val = len(val_loader.dataset)
 
-    total_val_loss_old = 1e16
+    av_lev_dist_old = 1e16
 
     for e in range(n_epoch) :
         
@@ -101,6 +101,7 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
             optimizer.step()
     
         total_val_loss = 0  
+        total_lev_dist = 0
         model.eval()      
         for data in val_loader :
             
@@ -115,31 +116,27 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
     
             total_val_loss += float(loss.cpu())
             
-        if total_val_loss < total_val_loss_old and save_path is not None:
+            targets = targets.cpu().numpy().astype('int')     
+            outmax = torch.argmax(output,dim=1).cpu().numpy()
+            for i, vec in enumerate(outmax):
+                
+                original = postprocessor.target2kana(targets[i]) 
+                predicted = postprocessor.target2kana(vec,refine = True)
+                lev_dist = postprocessor.levenshtein(original,predicted)
+                total_lev_dist += lev_dist
+                
+        av_lev_dist = total_lev_dist/n_val
             
-            total_val_loss_old = total_val_loss
+        if av_lev_dist < av_lev_dist_old and save_path is not None:
+            
+            av_lev_dist_old = total_lev_dist
             
             torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
             torch.save(model, os.path.join(save_path,'model.pt'))
            
-#            for data in val_loader :
-#                
-#                audio = data[0]
-#                targets = data[1]
-#                target_lengths = data[2]        
-#                current_batch_size = audio.size()[0]
-#                output = model(audio)        
-#        
-#                input_lengths = torch.full(size=(current_batch_size,), fill_value=output.size()[-1], dtype=torch.long)
-#                loss = criterion(output.transpose(1, 2).transpose(0, 1),targets,input_lengths,target_lengths)         
-#            
-#                targets = data[1].cpu().numpy().astype('int')    
-#                outmax = torch.argmax(output,dim=1).cpu().numpy()
-#                for i, vec in enumerate(outmax):            
-#                    print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
-#                    #print(postprocessor.target2kana(vec,refine = True))                
+              
                     
-        print(e,total_training_loss/n_train,total_val_loss/n_val)
+        print(e,total_training_loss/n_train,total_val_loss/n_val,av_lev_dist)
 
 
 if __name__ == '__main__':

@@ -27,6 +27,8 @@ from torch.utils.data import DataLoader
 
 def infer(model,val_loader) :
 
+    total_lev_dist = 0
+    n_val = len(val_loader.dataset)
     for data in val_loader :
         
         audio = data[0]
@@ -37,10 +39,18 @@ def infer(model,val_loader) :
         
         for i, vec in enumerate(outmax):
             
-            print(postprocessor.target2kana(targets[i]),postprocessor.target2kana(vec,refine = True))
-
-            #print(postprocessor.target2kana(vec,refine = False))            
-
+            original = postprocessor.target2kana(targets[i]) 
+            predicted = postprocessor.target2kana(vec,refine = True)
+            lev_dist = postprocessor.levenshtein(original,predicted)
+            total_lev_dist += lev_dist
+            
+            print(original, predicted,postprocessor.levenshtein(original,predicted))
+        
+        av_lev = total_lev_dist/n_val
+        
+    print('average Levenshtein distance',av_lev)
+        
+        
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -61,8 +71,7 @@ if __name__ == '__main__':
     n_target_max = info_dict['n_target_max']  
 
 #    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
-#    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed=False)
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = True,change_speed=False)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed=False)
     
     val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
 

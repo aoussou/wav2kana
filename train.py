@@ -27,7 +27,7 @@ def create_dir(path):
 
 lookup_dict = json.load(open('./lookup.json'))
 torch.set_default_tensor_type('torch.cuda.FloatTensor')
-torch.cuda.set_device(0)
+
 
 def train_val_split(sets,n_audio_max,n_target_max) :
 
@@ -174,6 +174,9 @@ if __name__ == '__main__':
 
     parser.add_argument('-lr', '--learning_rate', 
                         default = 1e-4, type = float)   
+
+    parser.add_argument('-n', '--gpu_number', 
+                        default = 0, type = int)  
     
     args = parser.parse_args()        
     path_set1 = args.dataset1
@@ -184,7 +187,10 @@ if __name__ == '__main__':
     multi_gpu = args.multi_gpu
     batch_size = args.batch_size
     lr = args.learning_rate
+    gpu_nbr = args.gpu_number
 
+    if not multi_gpu:
+        torch.cuda.set_device(gpu_nbr)
     
     info_dict = {}
     info_dict['n_audio_max'] = n_audio_max
@@ -267,7 +273,8 @@ if __name__ == '__main__':
     info_dict['target_list_val'] = target_list_val    
     info_dict['sets'] = sets
     
-    create_dir(save_path)
-    json.dump( info_dict, open(os.path.join(save_path,'info_dict.json'),'w+'))    
+    if save_path is not None:
+        create_dir(save_path)
+        json.dump( info_dict, open(os.path.join(save_path,'info_dict.json'),'w+'))    
     
     train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path)

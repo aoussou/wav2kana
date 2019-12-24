@@ -108,6 +108,7 @@ venv.bak/
 *.wav
 *.pt
 *.json
+*.txt
 *~lock.*
 archive
 

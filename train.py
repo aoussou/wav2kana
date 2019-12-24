@@ -79,13 +79,13 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
         
         total_training_loss = 0   
         model.train()
-        for data in train_loader :
+        for batch in train_loader :
             
             optimizer.zero_grad()   
             
-            audio = data[0]
-            targets = data[1]
-            target_lengths = data[2]        
+            audio = batch[0]
+            targets = batch[1]
+            target_lengths = batch[2]        
             current_batch_size = audio.size()[0]
             output = model(audio)
             
@@ -103,11 +103,11 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
         total_val_loss = 0  
         total_lev_dist = 0
         model.eval()      
-        for data in val_loader :
+        for batch in val_loader :
             
-            audio = data[0]
-            targets = data[1]
-            target_lengths = data[2]        
+            audio = batch[0]
+            targets = batch[1]
+            target_lengths = batch[2]        
             current_batch_size = audio.size()[0]
             output = model(audio)        
     
@@ -123,7 +123,7 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
                 original = postprocessor.target2kana(targets[i]) 
                 predicted = postprocessor.target2kana(vec,refine = True)
                 lev_dist = postprocessor.levenshtein(original,predicted)
-                total_lev_dist += lev_dist
+                total_lev_dist += lev_dist/len(original)
                 
         av_lev_dist = total_lev_dist/n_val
             
@@ -261,8 +261,8 @@ if __name__ == '__main__':
     audio_list_train, target_list_train, audio_list_val, target_list_val = \
         train_val_split(sets,n_audio_max,n_target_max)
 
-    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max)
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed = False)
+    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = True,change_speed = True)
+    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)

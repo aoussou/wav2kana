@@ -15,7 +15,7 @@ import librosa
 
 class AudioDataset(Dataset) :
     
-    def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = True,change_speed=True) :
+    def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = False,change_speed=False) :
         
         self.audio_list = audio_list
         self.target_list = target_list
@@ -55,7 +55,8 @@ class AudioDataset(Dataset) :
             random_int = random.randint(0,diff_pad)
             audio_npy = np.pad(audio_npy,(random_int,diff_pad-random_int),'constant')
         else :
-            audio_npy = np.pad(audio_npy,(0,diff_pad),'constant')
+            audio_npy = np.pad(audio_npy,(int(diff_pad/2),diff_pad - int(diff_pad/2)),'constant')
+            
         target_npy = np.load(self.target_list[idx])
         
         target_lengths = len(target_npy)

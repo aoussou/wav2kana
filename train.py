@@ -37,8 +37,11 @@ def train_val_split(sets,n_audio_max,n_target_max) :
     target_list_train = []
     target_list_val = []
     
+    list_dict = {}
+    
     for set_ in sets :
     
+        set_dict = {}
         audio_dir = os.path.join(set_['path'],'word_audio_npy')
         glob_pattern = os.path.join(audio_dir, '*')
         audio_list = sorted(glob(glob_pattern), key=os.path.getctime)
@@ -55,14 +58,22 @@ def train_val_split(sets,n_audio_max,n_target_max) :
         inds_train = inds[:n_train]
         inds_val = inds[n_train:]
         
+        set_dict['audio_list_train'] = np.array(audio_list)[inds_train].tolist()
+        set_dict['audio_list_val'] = np.array(audio_list)[inds_val].tolist()
+        
+        set_dict['target_list_train'] = np.array(target_list)[inds_train].tolist()
+        set_dict['target_list_val'] = np.array(target_list)[inds_val].tolist()
+        
         audio_list_train += np.array(audio_list)[inds_train].tolist()
         audio_list_val += np.array(audio_list)[inds_val].tolist()
         
         target_list_train += np.array(target_list)[inds_train].tolist()
         target_list_val += np.array(target_list)[inds_val].tolist()
+        
+        list_dict[set_['path']] = set_dict
     
     
-    return audio_list_train, target_list_train, audio_list_val, target_list_val
+    return audio_list_train, target_list_train, audio_list_val, target_list_val,list_dict
 
 #random_audio, random_target, _ = dataset_train[random.randint(0,len(audio_list))]
 #random_target = random_target.cpu().numpy().astype('int')
@@ -252,13 +263,13 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
     model.train()
 
-    optimizer = torch.optim.Adam(model.parameters(),lr=lr)
+    optimizer = torch.optim.SGD(model.parameters(),lr=lr)
     
     postprocessor = PostProcess(lookup_dict)
     
     criterion = torch.nn.CTCLoss()
 
-    audio_list_train, target_list_train, audio_list_val, target_list_val = \
+    audio_list_train, target_list_train, audio_list_val, target_list_val, list_dict = \
         train_val_split(sets,n_audio_max,n_target_max)
 
     dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = False,change_speed = False)
@@ -267,6 +278,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)
     
+    info_dict['list_dict'] = list_dict    
     info_dict['audio_list_train'] = audio_list_train
     info_dict['target_list_train'] = target_list_train
     info_dict['audio_list_val'] = audio_list_val

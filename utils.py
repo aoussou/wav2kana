@@ -15,7 +15,7 @@ import librosa
 
 class AudioDataset(Dataset) :
     
-    def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = False,change_speed=False) :
+    def __init__(self,audio_list,target_list,n_audio_max,n_target_max,random_pad = False,change_speed=False,return_path=False) :
         
         self.audio_list = audio_list
         self.target_list = target_list
@@ -23,6 +23,7 @@ class AudioDataset(Dataset) :
         self.n_target_max = n_target_max
         self.random_pad = random_pad
         self.change_speed = change_speed
+        self.return_path = return_path
         
     
     def __len__(self) :
@@ -31,7 +32,8 @@ class AudioDataset(Dataset) :
     
     def __getitem__(self,idx) :        
     
-        audio_npy = np.load(self.audio_list[idx])
+        path = self.audio_list[idx]
+        audio_npy = np.load(path)
         
         if self.change_speed :
             
@@ -67,7 +69,10 @@ class AudioDataset(Dataset) :
         target_tensor = torch.tensor(target_padded,device=torch.device('cuda'),dtype=torch.long)
         target_lengths_tensor = torch.tensor(target_lengths,device=torch.device('cuda'),dtype=torch.long)
         
-        return [audio_tensor,target_tensor,target_lengths_tensor]
+        if self.return_path :
+            return [audio_tensor,target_tensor,target_lengths_tensor,path]
+        else :
+            return [audio_tensor,target_tensor,target_lengths_tensor]
         
 
 class PostProcess() :

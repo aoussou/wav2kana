@@ -129,7 +129,7 @@ def train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path):
             
         if av_lev_dist < av_lev_dist_old and save_path is not None:
             
-            av_lev_dist_old = total_lev_dist
+            av_lev_dist_old = av_lev_dist
             
             torch.save(model.state_dict(), os.path.join(save_path,'state_dict.pt') )       
             torch.save(model, os.path.join(save_path,'model.pt'))
@@ -244,7 +244,7 @@ if __name__ == '__main__':
     # If you look at the lookup dictionary, you will see that there are 78 characters
     # In order to use the CTC loss in PyToch, we need to add 1
     n_class = 79
-    n_epoch = 200
+    n_epoch = 300
 
     model = Wav2Letter(n_class)
     model = model.cuda()
@@ -261,7 +261,7 @@ if __name__ == '__main__':
     audio_list_train, target_list_train, audio_list_val, target_list_val = \
         train_val_split(sets,n_audio_max,n_target_max)
 
-    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = True,change_speed = True)
+    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = False,change_speed = False)
     dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)

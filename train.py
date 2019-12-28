@@ -272,12 +272,13 @@ if __name__ == '__main__':
     audio_list_train, target_list_train, audio_list_val, target_list_val, list_dict = \
         train_val_split(sets,n_audio_max,n_target_max)
 
-    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = False,change_speed = False)
+    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = True,change_speed = True)
     dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
     
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)
-    
+
+    info_dict['args'] = vars(args)      
     info_dict['list_dict'] = list_dict    
     info_dict['audio_list_train'] = audio_list_train
     info_dict['target_list_train'] = target_list_train
@@ -287,6 +288,12 @@ if __name__ == '__main__':
     
     if save_path is not None:
         create_dir(save_path)
-        json.dump( info_dict, open(os.path.join(save_path,'info_dict.json'),'w+'))    
+        json.dump( info_dict, open(os.path.join(save_path,'info_dict.json'),'w+'))  
+        import shutil
+        shutil.copy(__file__, save_dir + __file__)
+        from shutil import copyfile
+        copyfile('train.py', os.path.join(save_path,'train.py'))
+        copyfile('models.py', os.path.join(save_path,'models.py'))
+        copyfile('utils.py', os.path.join(save_path,'utils.py'))  
     
     train(model,optimizer,criterion,train_loader,val_loader,n_epoch,save_path)

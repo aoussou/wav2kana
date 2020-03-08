@@ -49,10 +49,7 @@ def infer(model,val_loader) :
         
         
 if __name__ == '__main__':
-
-    
-
-    
+   
     parser = argparse.ArgumentParser()
     parser.add_argument('-i', '--model_path', 
                     default = None, type = str)  
@@ -77,14 +74,14 @@ if __name__ == '__main__':
         
         set_dict = list_dict[set_['path']]
         audio_list_val = set_dict['audio_list_val'] 
-        target_list_val = set_dict['target_list_val']     
+        target_dir = info_dict['target_dir']     
         n_audio_max = info_dict['n_audio_max']     
         n_target_max = info_dict['n_target_max']  
 
         if len(audio_list_val) != 0 :
             
             print(set_['path'])
-            dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max,random_pad = False,change_speed=False)
+            dataset_val = AudioDataset(audio_list_val,target_dir,n_audio_max,n_target_max,random_pad = False,change_speed=False)
             
             val_loader = DataLoader(dataset_val, batch_size=8,shuffle=False)
         

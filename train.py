@@ -157,7 +157,7 @@ if __name__ == '__main__':
     parser.add_argument('-s1', '--dataset1', 
                         default = None, type = str)  
     parser.add_argument('-r1', '--train_ratio1', 
-                        default = .8, type = float)  
+                        default = .9, type = float)  
     
     parser.add_argument('-s2', '--dataset2', 
                         default = None, type = str) 
@@ -181,7 +181,7 @@ if __name__ == '__main__':
                         default = False)    
 
     parser.add_argument('-b', '--batch_size', 
-                        default = 64, type = int)    
+                        default = 32, type = int)    
 
     parser.add_argument('-lr', '--learning_rate', 
                         default = 1e-4, type = float)   
@@ -263,7 +263,7 @@ if __name__ == '__main__':
         model = nn.DataParallel(model)
     model.train()
 
-    optimizer = torch.optim.SGD(model.parameters(),lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(),lr=lr)
     
     postprocessor = PostProcess(lookup_dict)
     

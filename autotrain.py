@@ -32,23 +32,17 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor')
 def train_val_split(sets,n_audio_max,n_target_max) :
 
     audio_list_train = []
-    audio_list_val = []
-
-    target_list_train = []
-    target_list_val = []
-    
+    audio_list_val = []   
     list_dict = {}
     
     for set_ in sets :
     
         set_dict = {}
-        audio_dir = os.path.join(set_['path'],'word_audio_npy')
+        audio_dir = os.path.join(set_['path'],'audio')
         glob_pattern = os.path.join(audio_dir, '*')
         audio_list = sorted(glob(glob_pattern), key=os.path.getctime)
         
         target_dir = os.path.join(set_['path'],'targets')
-        glob_pattern = os.path.join(target_dir, '*')
-        target_list = sorted(glob(glob_pattern), key=os.path.getctime)
         
         n_dataset = len(audio_list)
         n_train = int(set_['train_ratio']*n_dataset)
@@ -61,19 +55,13 @@ def train_val_split(sets,n_audio_max,n_target_max) :
         set_dict['audio_list_train'] = np.array(audio_list)[inds_train].tolist()
         set_dict['audio_list_val'] = np.array(audio_list)[inds_val].tolist()
         
-        set_dict['target_list_train'] = np.array(target_list)[inds_train].tolist()
-        set_dict['target_list_val'] = np.array(target_list)[inds_val].tolist()
-        
         audio_list_train += np.array(audio_list)[inds_train].tolist()
         audio_list_val += np.array(audio_list)[inds_val].tolist()
-        
-        target_list_train += np.array(target_list)[inds_train].tolist()
-        target_list_val += np.array(target_list)[inds_val].tolist()
-        
+                
         list_dict[set_['path']] = set_dict
     
     
-    return audio_list_train, target_list_train, audio_list_val, target_list_val,list_dict
+    return audio_list_train, audio_list_val, target_dir, list_dict
 
 #random_audio, random_target, _ = dataset_train[random.randint(0,len(audio_list))]
 #random_target = random_target.cpu().numpy().astype('int')
@@ -269,11 +257,11 @@ if __name__ == '__main__':
     
     criterion = torch.nn.CTCLoss()
 
-    audio_list_train, target_list_train, audio_list_val, target_list_val, list_dict = \
+    audio_list_train, audio_list_val, target_dir, list_dict = \
         train_val_split(sets,n_audio_max,n_target_max)
 
-    dataset_train = AudioDataset(audio_list_train,target_list_train,n_audio_max,n_target_max,random_pad = False,change_speed = False)
-    dataset_val = AudioDataset(audio_list_val,target_list_val,n_audio_max,n_target_max)
+    dataset_train = AudioDataset(audio_list_train,target_dir,n_audio_max,n_target_max,random_pad = False,change_speed = False)
+    dataset_val = AudioDataset(audio_list_val,target_dir,n_audio_max,n_target_max)
     
     train_loader = DataLoader(dataset_train, batch_size=batch_size,shuffle=True)
     val_loader = DataLoader(dataset_val, batch_size=batch_size,shuffle=False)
@@ -281,9 +269,8 @@ if __name__ == '__main__':
     info_dict['args'] = vars(args)      
     info_dict['list_dict'] = list_dict    
     info_dict['audio_list_train'] = audio_list_train
-    info_dict['target_list_train'] = target_list_train
-    info_dict['audio_list_val'] = audio_list_val
-    info_dict['target_list_val'] = target_list_val    
+    info_dict['target_dir'] = target_dir
+    info_dict['audio_list_val'] = audio_list_val 
     info_dict['sets'] = sets
     
     if save_path is not None:
